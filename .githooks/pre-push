@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+# 小型姜崃漫游 H5 GitHub 发布检查 · 260918 AMD#6
+set -eu
+
+remote_url="$2"
+case "$remote_url" in
+  https://github.com/*|git@github.com:*) ;;
+  *) echo "Push blocked: only GitHub remotes are permitted for this project." >&2; exit 1 ;;
+esac
+
+blocked='((^|[^[:alnum:]])[A-Za-z]:[\\/]|api[_-]?key|secret|token|password|passwd|authorization|bearer|cookie|client[_-]?secret|private[_-]?key|BEGIN [A-Z ]*PRIVATE KEY)'
+zero='0000000000000000000000000000000000000000'
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  range="$local_sha"
+  [ "$remote_sha" = "$zero" ] || range="$remote_sha..$local_sha"
+  for revision in $(git rev-list "$range"); do
+    if git grep -nI -E "$blocked" "$revision" -- . ':(exclude).githooks/pre-push'; then
+      echo "Push blocked: the outgoing history contains a credential-like value or an absolute path." >&2
+      exit 1
+    fi
+  done
+done
