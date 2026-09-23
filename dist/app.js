@@ -1,11 +1,17 @@
-/* 小型姜崃漫游 H5 功能Demo · 260917 AMD#5 */
+/* 小型姜崃漫游 H5 功能Demo · 260923 AMD#8 */
 (() => {
   "use strict";
 
-  const APP_VERSION = "260915 AMD#2";
+  const APP_VERSION = "260923 AMD#8";
   const STORAGE_KEY = "jianglai-vn-demo-player-v1";
   const LOG_KEY = "jianglai-vn-demo-debug-log-v1";
   const ENDINGS = ["E1", "E2", "E3", "E4"];
+  const SCENE_ART = {
+    L: ["1.jpg", "卢卡"], C: ["2.jpg", "ChiChi"], S: ["3.jpg", "学生1"],
+    R: ["4.jpg", "Richard"], A: ["5.jpg", "阿辽沙"], AN: ["6.jpg", "安欣"],
+    E1: ["3.jpg", "学生1"], E2: ["4.jpg", "Richard"], E3: ["5.jpg", "阿辽沙"], E4: ["6.jpg", "安欣"],
+    E5: ["7.jpg", "姜崃"],
+  };
   const ENDING_INFO = {
     E1: { title: "外面的世界很宽广，很大！", text: "青春之火燃烧，年轻的心悸动。\n\n你是这样相信的，也因此逃离了。\n\n世界，你好啊！" },
     E2: { title: "大房间归我自己", text: "贪婪的占有，命运的合奏。\n\n恶劣迎来了对手，羁绊融化了自由。\n\n或许你也向往高墙外的天空？" },
@@ -70,6 +76,7 @@
   let debugLogs = loadLogs();
   let toastTimer = null;
   let erasePointer = null;
+  let pageHistory = [];
 
   function blankState() {
     return {
@@ -122,8 +129,10 @@
     saveLogs();
   }
 
-  function go(node, { action = "系统", recordEnding = true } = {}) {
+  function go(node, { action = "系统", recordEnding = true, remember = true } = {}) {
     const from = state.node;
+    if (remember && from !== node) pageHistory.push(from);
+    if (pageHistory.length > 40) pageHistory.shift();
     if (recordEnding && !debugProfile && isEnding(node) && !state.endings.includes(node)) state.endings.push(node);
     state.node = node;
     if (node === "menu" && from !== "menu") state.resumeNode = from;
@@ -191,15 +200,7 @@
 
   function render() {
     const node = state.node;
-    const nodeName = NODE_NAMES[node] || node;
     app.innerHTML = `<div class="app-shell"><section class="game-stage" aria-label="小型姜崃漫游功能Demo">
-      <header class="stage-topbar"><div><span class="brand">小型姜崃漫游</span><span class="node-label"> · ${escapeHtml(nodeName)}</span></div>
-      <div class="top-actions">
-        <button class="btn small" data-action="menu">主菜单</button>
-        <button class="btn small" data-action="endings">结局</button>
-        <button class="btn small" data-action="settings">设置</button>
-        <button class="btn small debug-toggle" data-action="debug">调试</button>
-      </div></header>
       ${renderScreen(node)}
     </section></div>
     <aside class="rotate-guard"><div><p>本Demo按横屏16:9设计。请横向握持手机后继续；浏览器允许时可尝试锁定横屏。</p><button class="btn primary" data-action="landscape">尝试横屏</button></div></aside>
@@ -231,13 +232,13 @@
   function renderMenu() {
     const endings = effectiveEndings();
     const marks = ENDINGS.map((id) => endings.includes(id) ? "◆" : "◇").join(" ");
-    return `<div class="play-area"><section class="story-area menu"><div><h1 class="menu-title">小型姜崃漫游</h1><p class="menu-subtitle">Forking Paths To The Future · 功能Demo</p><div class="menu-actions">
-      <button class="btn primary" data-action="start">${ordinaryEndingComplete() ? "再次出发" : "开始体验"}</button>
-      ${state.resumeNode && !debugProfile ? '<button class="btn" data-action="continue">继续</button>' : ""}
-      <button class="btn" data-action="endings">结局回看</button><button class="btn" data-action="settings">设置</button>
+    return `<div class="menu-screen"><section class="menu-cover"><span class="node-label menu-node-label">主菜单</span><p class="menu-kicker">Forking Paths To The Future</p><h1 class="menu-title">小型姜崃漫游</h1><p class="menu-subtitle">循着分岔的小径，翻开这一页。</p><div class="menu-actions">
+      <button class="btn primary" data-action="start">${ordinaryEndingComplete() ? "再次出发" : "开始漫游"}</button>
+      ${state.resumeNode && !debugProfile ? '<button class="btn" data-action="continue">继续阅读</button>' : ""}
+      <button class="btn" data-action="endings">结局回看</button><button class="btn" data-action="settings">设置</button><button class="btn debug-toggle" data-action="debug">调试</button>
     </div><p class="progress-line">结局收集 <span class="progress-mark">${marks}</span>　${endings.filter((id) => ENDINGS.includes(id)).length}/4</p>
     ${ordinaryEndingComplete() ? '<p class="demo-note">二阶段前言已解锁。</p>' : '<p class="demo-note">收集四个普通结局后，前言会发生变化。</p>'}
-    ${debugProfile ? `<p class="demo-note">调试档：${escapeHtml(debugProfile.label)}（不会写入玩家进度）</p>` : ""}</div></section></div>`;
+    ${debugProfile ? `<p class="demo-note">调试档：${escapeHtml(debugProfile.label)}（不会写入玩家进度）</p>` : ""}</section></div>`;
   }
 
   function renderEnding(id) {
@@ -275,7 +276,20 @@
   }
 
   function renderDialoguePage({ speaker, content, controls = "", note = "" }) {
-    return `<div class="play-area"><div class="scene-space" aria-hidden="true"></div><section class="dialogue-box" aria-label="对话框"><div class="speaker-tag">${escapeHtml(speaker)}</div><div class="dialogue-content story-copy">${content}</div><div class="dialogue-controls" aria-label="选项">${controls}</div><div class="choice-note">${note}</div></section></div>`;
+    const art = SCENE_ART[state.node];
+    const image = art
+      ? `<img class="scene-art" src="assets/scenes/${art[0]}" alt="${escapeHtml(art[1])}的剧情插画${art[0] === "3.jpg" ? "" : "草稿"}" />`
+      : `<div class="scene-placeholder" aria-hidden="true"><span>小径分岔的花园</span></div>`;
+    return `<div class="play-area book-view"><nav class="book-rail" aria-label="游戏操作"><span class="rail-mark" aria-hidden="true">✧</span>
+      <button class="rail-button" data-action="menu" aria-label="主菜单" title="主菜单">☰</button>
+      <button class="rail-button" data-action="settings" aria-label="设置" title="设置">⚙</button>
+      <button class="rail-button" data-action="endings" aria-label="结局回看" title="结局回看">◇</button>
+      <button class="rail-button" data-action="back" aria-label="返回上一剧情页" title="返回上一剧情页" ${pageHistory.length ? "" : "disabled"}>↶</button>
+      <button class="rail-button debug-toggle" data-action="debug" aria-label="调试" title="调试">⌘</button>
+      <span class="node-label">${escapeHtml(NODE_NAMES[state.node] || state.node)}</span></nav>
+      <div class="book-spread"><div class="book-page illustration-page">${image}</div>
+      <section class="book-page text-page" aria-label="剧情与选项"><header class="page-heading"><span class="speaker-tag">${escapeHtml(speaker)}</span><span class="page-rule" aria-hidden="true">✧</span></header>
+      <div class="dialogue-content story-copy">${content}</div><div class="dialogue-controls" aria-label="选项">${controls}</div><div class="choice-note">${note}</div></section></div></div>`;
   }
 
   function speakerFor(node) {
@@ -322,21 +336,22 @@
     if (action === "close-modal" && event.target === event.currentTarget) { modal = null; render(); return; }
     if (action === "start") { beginExperience(); return; }
     if (action === "continue") { const target = state.resumeNode; if (target) { state.resumeNode = null; go(target, { action: "继续" }); } return; }
-    if (action === "menu" || action === "return-menu") { modal = null; go("menu", { action: "返回主菜单", recordEnding: false }); return; }
+    if (action === "back") { const previous = pageHistory.pop(); if (previous) go(previous, { action: "返回上一剧情页", recordEnding: false, remember: false }); return; }
+    if (action === "menu" || action === "return-menu") { modal = null; go("menu", { action: "返回主菜单", recordEnding: false, remember: false }); return; }
     if (action === "endings" || action === "settings") { modal = action; render(); return; }
     if (action === "close-modal") { modal = null; render(); return; }
     if (action === "debug") { debugOpen = !debugOpen; render(); return; }
     if (action === "landscape") { requestLandscape(); return; }
     if (action === "bird") { go("menu", { action: "鸟", recordEnding: false }); showToast("一切重新开始。收集进度被保留。"); return; }
     if (action === "erase-fallback") { go("TE_EMPTY", { action: "擦除替代完成" }); return; }
-    if (action === "debug-jump") { const to = app.querySelector("#debug-node").value; go(to, { action: "调试跳转", recordEnding: false }); return; }
-    if (action === "debug-normal") { debugProfile = null; state = loadState(); log("调试", "恢复玩家档", state.node); render(); return; }
+    if (action === "debug-jump") { const to = app.querySelector("#debug-node").value; pageHistory = []; go(to, { action: "调试跳转", recordEnding: false, remember: false }); return; }
+    if (action === "debug-normal") { debugProfile = null; pageHistory = []; state = loadState(); log("调试", "恢复玩家档", state.node); render(); return; }
     if (action === "reload-scene") { log(state.node, "重载当前场景", state.node); render(); return; }
     if (action === "show-hitboxes") { document.querySelectorAll(".choice, .interactive-word, .identity, .erase-pad").forEach((el) => { el.style.outline = "2px dashed #ffdc76"; }); showToast("当前场景的交互区域已用黄线标出。"); return; }
     if (action === "copy-log") { copyLog(); return; }
     if (action === "clear-log") { debugLogs = []; saveLogs(); render(); return; }
     if (action === "simulate-storage") { storageOK = false; showToast("已模拟存档失败：本次仅保留在内存。刷新页面会恢复原档。 "); render(); return; }
-    if (action === "reset-player") { if (window.confirm("确定重置所有玩家结局和当前进度吗？此操作不会影响调试日志。")) { debugProfile = null; state = blankState(); saveState(); log("玩家档", "重置全部进度", "menu"); render(); } return; }
+    if (action === "reset-player") { if (window.confirm("确定重置所有玩家结局和当前进度吗？此操作不会影响调试日志。")) { debugProfile = null; pageHistory = []; state = blankState(); saveState(); log("玩家档", "重置全部进度", "menu"); render(); } return; }
   }
 
   function chooseIdentity(id) {
@@ -369,6 +384,7 @@
       te: { label: "TE进行中", endings: ["E1", "E2", "E3", "E4"], node: "TE_IDENTITY", teChosen: ["luca", "chichi"] },
     };
     debugProfile = profiles[profile];
+    pageHistory = [];
     state = { ...blankState(), node: debugProfile.node, teChosen: debugProfile.teChosen };
     log("调试", `载入预设：${debugProfile.label}`, state.node);
     render();
