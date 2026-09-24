@@ -1,8 +1,8 @@
-/* 小型姜崃漫游 H5 功能Demo · 260923 AMD#8 */
+/* 小型姜崃漫游 H5 功能Demo · 260924 AMD#9 */
 (() => {
   "use strict";
 
-  const APP_VERSION = "260923 AMD#8";
+  const APP_VERSION = "260924 AMD#9";
   const STORAGE_KEY = "jianglai-vn-demo-player-v1";
   const LOG_KEY = "jianglai-vn-demo-debug-log-v1";
   const ENDINGS = ["E1", "E2", "E3", "E4"];
@@ -77,6 +77,7 @@
   let toastTimer = null;
   let erasePointer = null;
   let pageHistory = [];
+  let menuView = "cover";
 
   function blankState() {
     return {
@@ -200,12 +201,19 @@
 
   function render() {
     const node = state.node;
-    app.innerHTML = `<div class="app-shell"><section class="game-stage" aria-label="小型姜崃漫游功能Demo">
+    const previousContent = app.querySelector(".dialogue-content");
+    const previousNode = app.querySelector(".game-stage")?.dataset.node;
+    const previousScroll = previousContent?.scrollTop || 0;
+    app.innerHTML = `<div class="app-shell"><section class="game-stage" data-node="${escapeHtml(node)}" aria-label="小型姜崃漫游功能Demo">
       ${renderScreen(node)}
     </section></div>
     <aside class="rotate-guard"><div><p>本Demo按横屏16:9设计。请横向握持手机后继续；浏览器允许时可尝试锁定横屏。</p><button class="btn primary" data-action="landscape">尝试横屏</button></div></aside>
     ${debugOpen ? renderDebugDrawer() : ""}${modal ? renderModal() : ""}`;
     bindEvents();
+    if (previousNode === node) {
+      const content = app.querySelector(".dialogue-content");
+      if (content) content.scrollTop = previousScroll;
+    }
   }
 
   function renderScreen(node) {
@@ -232,13 +240,11 @@
   function renderMenu() {
     const endings = effectiveEndings();
     const marks = ENDINGS.map((id) => endings.includes(id) ? "◆" : "◇").join(" ");
-    return `<div class="menu-screen"><section class="menu-cover"><span class="node-label menu-node-label">主菜单</span><p class="menu-kicker">Forking Paths To The Future</p><h1 class="menu-title">小型姜崃漫游</h1><p class="menu-subtitle">循着分岔的小径，翻开这一页。</p><div class="menu-actions">
-      <button class="btn primary" data-action="start">${ordinaryEndingComplete() ? "再次出发" : "开始漫游"}</button>
-      ${state.resumeNode && !debugProfile ? '<button class="btn" data-action="continue">继续阅读</button>' : ""}
-      <button class="btn" data-action="endings">结局回看</button><button class="btn" data-action="settings">设置</button><button class="btn debug-toggle" data-action="debug">调试</button>
-    </div><p class="progress-line">结局收集 <span class="progress-mark">${marks}</span>　${endings.filter((id) => ENDINGS.includes(id)).length}/4</p>
-    ${ordinaryEndingComplete() ? '<p class="demo-note">二阶段前言已解锁。</p>' : '<p class="demo-note">收集四个普通结局后，前言会发生变化。</p>'}
-    ${debugProfile ? `<p class="demo-note">调试档：${escapeHtml(debugProfile.label)}（不会写入玩家进度）</p>` : ""}</section></div>`;
+    if (menuView === "cover") {
+      const cover = ordinaryEndingComplete() ? "cover-2.jpg" : "cover-1.jpg";
+      return `<div class="cover-screen"><img class="cover-art" src="assets/covers/${cover}" alt="小型姜崃漫游${ordinaryEndingComplete() ? "二" : "一"}周目封面" /><button class="cover-enter" data-action="open-menu">进入主界面 <span aria-hidden="true">→</span></button><span class="node-label cover-node-label">${ordinaryEndingComplete() ? "第二周目" : "第一周目"}</span></div>`;
+    }
+    return `<div class="menu-screen main-menu-screen"><img class="main-menu-art" src="assets/covers/menu-options.jpg" alt="小型姜崃漫游主界面插画" /><header class="main-menu-top"><span class="node-label">主菜单 · ${ordinaryEndingComplete() ? "第二周目" : "第一周目"}</span><span>结局收集 <span class="progress-mark">${marks}</span>　${endings.filter((id) => ENDINGS.includes(id)).length}/4</span></header><div class="main-menu-utility"><button class="menu-utility-button" data-action="endings">结局回看</button><button class="menu-utility-button debug-toggle" data-action="debug">调试</button></div><nav class="main-menu-actions" aria-label="主菜单选项"><button class="main-menu-button" data-action="start"><span class="menu-icon icon-new" aria-hidden="true"></span>新游戏</button><button class="main-menu-button" data-action="continue"><span class="menu-icon icon-continue" aria-hidden="true"></span>继续游戏</button><button class="main-menu-button" data-action="settings"><span class="menu-icon icon-settings" aria-hidden="true"></span>设置</button><button class="main-menu-button" data-action="show-cover"><span class="menu-icon icon-exit" aria-hidden="true"></span>退出游戏</button></nav>${debugProfile ? `<span class="menu-debug-note">调试档：${escapeHtml(debugProfile.label)}（不会写入玩家进度）</span>` : ""}</div>`;
   }
 
   function renderEnding(id) {
@@ -287,7 +293,7 @@
       <button class="rail-button" data-action="back" aria-label="返回上一剧情页" title="返回上一剧情页" ${pageHistory.length ? "" : "disabled"}>↶</button>
       <button class="rail-button debug-toggle" data-action="debug" aria-label="调试" title="调试">⌘</button>
       <span class="node-label">${escapeHtml(NODE_NAMES[state.node] || state.node)}</span></nav>
-      <div class="book-spread"><div class="book-page illustration-page">${image}</div>
+      <div class="book-spread"><div class="book-page illustration-page">${image}${art ? '<button class="art-zoom" data-action="view-art" aria-label="放大查看插画" title="放大查看插画"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M10.5 8v5M8 10.5h5"/></svg><span>放大</span></button>' : ""}</div>
       <section class="book-page text-page" aria-label="剧情与选项"><header class="page-heading"><span class="speaker-tag">${escapeHtml(speaker)}</span><span class="page-rule" aria-hidden="true">✧</span></header>
       <div class="dialogue-content story-copy">${content}</div><div class="dialogue-controls" aria-label="选项">${controls}</div><div class="choice-note">${note}</div></section></div></div>`;
   }
@@ -311,6 +317,11 @@
   }
 
   function renderModal() {
+    if (modal === "art") {
+      const art = SCENE_ART[state.node];
+      if (!art) return "";
+      return `<div class="art-viewer-backdrop" data-action="close-modal"><section class="art-viewer" role="dialog" aria-modal="true" aria-label="${escapeHtml(art[1])}插画放大查看"><button class="art-viewer-close" data-action="close-modal" aria-label="关闭插画">关闭 ×</button><img src="assets/scenes/${art[0]}" alt="${escapeHtml(art[1])}的剧情插画" /></section></div>`;
+    }
     if (modal === "endings") {
       const all = ["E1", "E2", "E3", "E4", "E5"];
       return `<div class="modal-backdrop" data-action="close-modal"><section class="modal" role="dialog" aria-modal="true" aria-label="结局回看"><div class="modal-header"><h2>结局回看</h2><button class="btn small" data-action="close-modal">关闭</button></div><div class="ending-list">${all.map((id) => { const unlocked = effectiveEndings().includes(id); return `<div class="ending-row ${unlocked ? "" : "locked"}"><div><strong>${id}</strong>　${unlocked ? escapeHtml(ENDING_INFO[id].title) : "尚未解锁"}</div>${unlocked ? `<button class="btn small" data-ending-view="${id}">查看</button>` : ""}</div>`; }).join("")}</div></section></div>`;
@@ -334,8 +345,11 @@
 
   function handleAction(event, action) {
     if (action === "close-modal" && event.target === event.currentTarget) { modal = null; render(); return; }
+    if (action === "open-menu") { menuView = "menu"; render(); return; }
+    if (action === "show-cover") { menuView = "cover"; render(); return; }
+    if (action === "view-art") { modal = "art"; render(); app.querySelector(".art-viewer-close")?.focus(); return; }
     if (action === "start") { beginExperience(); return; }
-    if (action === "continue") { const target = state.resumeNode; if (target) { state.resumeNode = null; go(target, { action: "继续" }); } return; }
+    if (action === "continue") { const target = state.resumeNode; if (target && !debugProfile) { state.resumeNode = null; go(target, { action: "继续" }); } else showToast("暂无可继续的剧情，请选择新游戏。"); return; }
     if (action === "back") { const previous = pageHistory.pop(); if (previous) go(previous, { action: "返回上一剧情页", recordEnding: false, remember: false }); return; }
     if (action === "menu" || action === "return-menu") { modal = null; go("menu", { action: "返回主菜单", recordEnding: false, remember: false }); return; }
     if (action === "endings" || action === "settings") { modal = action; render(); return; }
@@ -403,6 +417,9 @@
   document.addEventListener("click", (event) => {
     const profileButton = event.target.closest("[data-profile]");
     if (profileButton) applyProfile(profileButton.dataset.profile);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modal) { modal = null; render(); }
   });
   render();
 })();
