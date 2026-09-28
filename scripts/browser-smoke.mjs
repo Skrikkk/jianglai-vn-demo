@@ -1,5 +1,5 @@
 /**
- * 小型姜崃漫游 H5 浏览器冒烟测试 · 260924 AMD#9
+ * 小型姜崃漫游 H5 浏览器冒烟测试 · 260928 AMD#10
  * 无依赖浏览器冒烟测试。
  * 用 Chrome/Edge 的远程调试端口检查真实DOM操作能走完 E1—E5。
  * 启动浏览器示例：
@@ -45,6 +45,7 @@ async function assertArt(file) {
   if (!art?.loaded || !art.src.endsWith(`/${file}`)) throw new Error(`Expected loaded scene art ${file}, got ${JSON.stringify(art)}.`);
   if (!await evaluate("Boolean(document.querySelector('.text-page .dialogue-controls .choice'))")) throw new Error("Choices are not on the right-hand book page.");
   if (!await evaluate("Boolean(document.querySelector('.illustration-page .art-zoom'))")) throw new Error("Scene art has no zoom control.");
+  if (await evaluate("Boolean(document.querySelector('.illustration-page .art-zoom').textContent.trim())")) throw new Error("Zoom control should show only the icon.");
 }
 async function assertCover(file) {
   const cover = await evaluate("(() => { const image = document.querySelector('.cover-art'); return image && { src: image.getAttribute('src'), loaded: image.complete && image.naturalWidth > 0 }; })()");

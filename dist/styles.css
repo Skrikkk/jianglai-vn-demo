@@ -288,7 +288,7 @@ body { background: radial-gradient(circle at 50% 38%, #d2e1e7, #8cacc4 70%, #6c8
 .icon-settings { transform: rotate(130deg); }
 .icon-exit { transform: rotate(220deg); }
 .menu-debug-note { position: absolute; left: 1rem; bottom: 13%; color: #fff; padding: .25rem .4rem; background: #000b; font-size: .72rem; }
-.art-zoom { position: absolute; right: clamp(.7rem, 1.7vw, 1.4rem); bottom: clamp(.7rem, 1.7vw, 1.4rem); display: flex; align-items: center; gap: .3rem; padding: .38rem .55rem; color: #2d3441; background: #fff9e9e8; border: 1px solid #56697f; border-radius: .3rem; box-shadow: 0 3px 10px #17202a66; font-size: .75rem; }
+.art-zoom { position: absolute; right: clamp(.7rem, 1.7vw, 1.4rem); bottom: clamp(.7rem, 1.7vw, 1.4rem); display: grid; place-items: center; width: 2.35rem; height: 2.35rem; padding: .35rem; color: #2d3441; background: #fff9e9e8; border: 1px solid #56697f; border-radius: .3rem; box-shadow: 0 3px 10px #17202a66; }
 .art-zoom svg { width: 1.3rem; height: 1.3rem; }
 .art-zoom:hover, .art-zoom:focus-visible { color: #fff; background: #314760; outline: 2px solid #fff; outline-offset: 2px; }
 .art-viewer-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); background: #0b1018ed; }
@@ -302,7 +302,6 @@ body { background: radial-gradient(circle at 50% 38%, #d2e1e7, #8cacc4 70%, #6c8
   .main-menu-utility { top: 1.6rem; right: .5rem; }
   .main-menu-actions { min-height: 2.5rem; padding: .15rem .35rem; gap: .1rem; }
   .main-menu-button { gap: .25rem; letter-spacing: 0; }
-  .art-zoom { right: .45rem; bottom: .45rem; padding: .25rem; }
-  .art-zoom span { display: none; }
+  .art-zoom { right: .45rem; bottom: .45rem; width: 2rem; height: 2rem; padding: .25rem; }
   .art-viewer img { max-height: 74vh; }
 }

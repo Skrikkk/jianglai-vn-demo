@@ -1,8 +1,8 @@
-/* 小型姜崃漫游 H5 功能Demo · 260924 AMD#9 */
+/* 小型姜崃漫游 H5 功能Demo · 260928 AMD#10 */
 (() => {
   "use strict";
 
-  const APP_VERSION = "260924 AMD#9";
+  const APP_VERSION = "260928 AMD#10";
   const STORAGE_KEY = "jianglai-vn-demo-player-v1";
   const LOG_KEY = "jianglai-vn-demo-debug-log-v1";
   const ENDINGS = ["E1", "E2", "E3", "E4"];
@@ -293,7 +293,7 @@
       <button class="rail-button" data-action="back" aria-label="返回上一剧情页" title="返回上一剧情页" ${pageHistory.length ? "" : "disabled"}>↶</button>
       <button class="rail-button debug-toggle" data-action="debug" aria-label="调试" title="调试">⌘</button>
       <span class="node-label">${escapeHtml(NODE_NAMES[state.node] || state.node)}</span></nav>
-      <div class="book-spread"><div class="book-page illustration-page">${image}${art ? '<button class="art-zoom" data-action="view-art" aria-label="放大查看插画" title="放大查看插画"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M10.5 8v5M8 10.5h5"/></svg><span>放大</span></button>' : ""}</div>
+      <div class="book-spread"><div class="book-page illustration-page">${image}${art ? '<button class="art-zoom" data-action="view-art" aria-label="放大查看插画"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M10.5 8v5M8 10.5h5"/></svg></button>' : ""}</div>
       <section class="book-page text-page" aria-label="剧情与选项"><header class="page-heading"><span class="speaker-tag">${escapeHtml(speaker)}</span><span class="page-rule" aria-hidden="true">✧</span></header>
       <div class="dialogue-content story-copy">${content}</div><div class="dialogue-controls" aria-label="选项">${controls}</div><div class="choice-note">${note}</div></section></div></div>`;
   }
